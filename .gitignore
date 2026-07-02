@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Environment variables (keep your token safe!)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build output (if using TypeScript)
+dist/
+build/
+EOF
