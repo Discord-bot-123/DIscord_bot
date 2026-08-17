@@ -203,12 +203,10 @@ client.on('messageCreate', async message => {
   await message.reply(responseText);
 });
 
-// ---------- keep-alive server (for Render.com free tier) ----------
-
+// Keep-alive web server
+const express = require('express');
 const app = express();
-app.get('/', (req, res) => res.send('Bot is alive.'));
-app.listen(process.env.PORT || 3000, () => {
-  console.log(`Keep-alive server running on port ${process.env.PORT || 3000}`);
-});
+app.get('/', (req, res) => res.send('Bot is running'));
+app.listen(process.env.PORT || 3000);
 
 client.login(process.env.BOT_TOKEN);
