@@ -2,6 +2,7 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 const fs = require('fs');
 const path = require('path');
 const { Client, GatewayIntentBits, Partials, PermissionFlagsBits } = require('discord.js');
+const express = require('express');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const DATA_FILE = path.join(DATA_DIR, 'data.json');
@@ -200,6 +201,14 @@ client.on('messageCreate', async message => {
   }
 
   await message.reply(responseText);
+});
+
+// ---------- keep-alive server (for Render.com free tier) ----------
+
+const app = express();
+app.get('/', (req, res) => res.send('Bot is alive.'));
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`Keep-alive server running on port ${process.env.PORT || 3000}`);
 });
 
 client.login(process.env.BOT_TOKEN);
