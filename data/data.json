@@ -1,0 +1,22 @@
+{
+  "guilds": {
+    "1529096178862522398": {
+      "prefix": "Siri",
+      "commands": {
+        "yell": {
+          "response": "I am yelling at you listen to me",
+          "target": false
+        },
+        "yellathim": {
+          "response": "I am yelling at you bring your ass to me this moment",
+          "target": true
+        },
+        "sleep": {
+          "response": "you need to sleep right now or it will not be good for you",
+          "target": true,
+          "description": "telling them to sleep"
+        }
+      }
+    }
+  }
+}
