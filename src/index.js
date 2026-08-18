@@ -116,37 +116,41 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
 
-  const guildData = await getGuildData(message.guild.id);
-  const prefix = guildData.prefix;
+  try {
+    const guildData = await getGuildData(message.guild.id);
+    const prefix = guildData.prefix;
 
-  if (!message.content.startsWith(prefix)) return;
+    if (!message.content.startsWith(prefix)) return;
 
-  const withoutPrefix = message.content.slice(prefix.length).trim();
-  const [rawName] = withoutPrefix.split(/\s+/);
-  const commandName = (rawName || '').toLowerCase();
-  if (!commandName) return;
+    const withoutPrefix = message.content.slice(prefix.length).trim();
+    const [rawName] = withoutPrefix.split(/\s+/);
+    const commandName = (rawName || '').toLowerCase();
+    if (!commandName) return;
 
-  const cmd = guildData.commands[commandName];
-  if (!cmd) {
-    return message.reply(`\`${commandName}\` is not a command. To see all commands, use \`/listcommands\`.`);
-  }
-
-  let responseText = cmd.response;
-
-  if (cmd.target) {
-    const targetUser = message.mentions.users.first();
-    if (!targetUser) {
-      return message.reply(`This command needs a target. Usage: \`${prefix} ${commandName} @user\``);
+    const cmd = guildData.commands[commandName];
+    if (!cmd) {
+      return message.reply(`\`${commandName}\` is not a command. To see all commands, use \`/listcommands\`.`);
     }
-    const mention = `<@${targetUser.id}>`;
-    // If the response text has a {target} placeholder, fill it in.
-    // Otherwise just tag the user at the end automatically.
-    responseText = responseText.includes('{target}')
-      ? responseText.replaceAll('{target}', mention)
-      : `${responseText} ${mention}`;
-  }
 
-  await message.reply(responseText);
+    let responseText = cmd.response;
+
+    if (cmd.target) {
+      const targetUser = message.mentions.users.first();
+      if (!targetUser) {
+        return message.reply(`This command needs a target. Usage: \`${prefix} ${commandName} @user\``);
+      }
+      const mention = `<@${targetUser.id}>`;
+      // If the response text has a {target} placeholder, fill it in.
+      // Otherwise just tag the user at the end automatically.
+      responseText = responseText.includes('{target}')
+        ? responseText.replaceAll('{target}', mention)
+        : `${responseText} ${mention}`;
+    }
+
+    await message.reply(responseText);
+  } catch (err) {
+    console.error('messageCreate error:', err.message);
+  }
 });
 
 // ---------- keep-alive server (for Render.com free tier) ----------

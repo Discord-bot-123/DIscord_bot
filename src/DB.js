@@ -3,13 +3,22 @@ const { MongoClient } = require('mongodb');
 const client = new MongoClient(process.env.MONGODB_URI);
 let guildsCollection;
 
+client.on('error', err => {
+  console.error('MongoDB client error:', err.message);
+});
+
 async function connect() {
   if (guildsCollection) return guildsCollection;
-  await client.connect();
-  const db = client.db('discord-custom-bot');
-  guildsCollection = db.collection('guilds');
-  console.log('Connected to MongoDB.');
-  return guildsCollection;
+  try {
+    await client.connect();
+    const db = client.db('discord-custom-bot');
+    guildsCollection = db.collection('guilds');
+    console.log('Connected to MongoDB.');
+    return guildsCollection;
+  } catch (err) {
+    console.error('Failed to connect to MongoDB:', err.message);
+    throw err;
+  }
 }
 
 async function getGuildData(guildId) {
