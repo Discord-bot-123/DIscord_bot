@@ -1,7 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const { Client, GatewayIntentBits, Partials, PermissionFlagsBits } = require('discord.js');
 const express = require('express');
-const { getGuildData, setPrefix, addCommand, removeCommand } = require('./db');
+const { getGuildData, setPrefix, addCommand, removeCommand } = require('./DB');
 
 // ---------- client ----------
 
