@@ -1,61 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-const fs = require('fs');
-const path = require('path');
 const { Client, GatewayIntentBits, Partials, PermissionFlagsBits } = require('discord.js');
 const express = require('express');
-
-const DATA_DIR = path.join(__dirname, '..', 'data');
-const DATA_FILE = path.join(DATA_DIR, 'data.json');
-
-// ---------- storage ----------
-
-function loadData() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ guilds: {} }, null, 2));
-  }
-  return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-}
-
-function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-}
-
-function getGuildData(guildId) {
-  const data = loadData();
-  if (!data.guilds[guildId]) {
-    data.guilds[guildId] = { prefix: 'Siri', commands: {} };
-    saveData(data);
-  }
-  return data.guilds[guildId];
-}
-
-function setPrefix(guildId, newPrefix) {
-  const data = loadData();
-  if (!data.guilds[guildId]) data.guilds[guildId] = { prefix: 'Siri', commands: {} };
-  data.guilds[guildId].prefix = newPrefix;
-  saveData(data);
-}
-
-function addCommand(guildId, name, response, target, description) {
-  const data = loadData();
-  if (!data.guilds[guildId]) data.guilds[guildId] = { prefix: 'Siri', commands: {} };
-  data.guilds[guildId].commands[name.toLowerCase()] = {
-    response,
-    target: !!target,
-    description: description || ''
-  };
-  saveData(data);
-}
-
-function removeCommand(guildId, name) {
-  const data = loadData();
-  if (!data.guilds[guildId]) return false;
-  const existed = name.toLowerCase() in data.guilds[guildId].commands;
-  delete data.guilds[guildId].commands[name.toLowerCase()];
-  saveData(data);
-  return existed;
-}
+const { getGuildData, setPrefix, addCommand, removeCommand } = require('./db');
 
 // ---------- client ----------
 
@@ -103,8 +49,8 @@ client.on('interactionCreate', async interaction => {
           return interaction.reply({ content: 'Command name cannot contain spaces.', ephemeral: true });
         }
 
-        addCommand(interaction.guildId, name, response, target, description);
-        const guildData = getGuildData(interaction.guildId);
+        await addCommand(interaction.guildId, name, response, target, description);
+        const guildData = await getGuildData(interaction.guildId);
         return interaction.reply({
           content: `Custom command \`${name}\` added. Use it as \`${guildData.prefix} ${name}\`.${target ? ' It requires a @target mention — the tagged user is added automatically.' : ''}`,
           ephemeral: true
@@ -117,7 +63,7 @@ client.on('interactionCreate', async interaction => {
         }
 
         const name = interaction.options.getString('name').trim().toLowerCase();
-        const existed = removeCommand(interaction.guildId, name);
+        const existed = await removeCommand(interaction.guildId, name);
         return interaction.reply({
           content: existed ? `Removed \`${name}\`.` : `No command named \`${name}\` found.`,
           ephemeral: true
@@ -133,12 +79,12 @@ client.on('interactionCreate', async interaction => {
         if (prefix.length === 0 || prefix.length > 5 || /\s/.test(prefix)) {
           return interaction.reply({ content: 'Prefix must be 1-5 characters with no spaces.', ephemeral: true });
         }
-        setPrefix(interaction.guildId, prefix);
+        await setPrefix(interaction.guildId, prefix);
         return interaction.reply({ content: `Prefix updated to \`${prefix}\`.`, ephemeral: true });
       }
 
       case 'listcommands': {
-        const guildData = getGuildData(interaction.guildId);
+        const guildData = await getGuildData(interaction.guildId);
         const names = Object.keys(guildData.commands);
         if (names.length === 0) {
           return interaction.reply({ content: 'No custom commands set up yet.', ephemeral: true });
@@ -170,7 +116,7 @@ client.on('interactionCreate', async interaction => {
 client.on('messageCreate', async message => {
   if (message.author.bot || !message.guild) return;
 
-  const guildData = getGuildData(message.guild.id);
+  const guildData = await getGuildData(message.guild.id);
   const prefix = guildData.prefix;
 
   if (!message.content.startsWith(prefix)) return;
@@ -203,9 +149,12 @@ client.on('messageCreate', async message => {
   await message.reply(responseText);
 });
 
-// Keep-alive web server
+// ---------- keep-alive server (for Render.com free tier) ----------
+
 const app = express();
-app.get('/', (req, res) => res.send('Bot is running'));
-app.listen(process.env.PORT || 3000);
+app.get('/', (req, res) => res.send('Bot is alive.'));
+app.listen(process.env.PORT || 3000, () => {
+  console.log(`Keep-alive server running on port ${process.env.PORT || 3000}`);
+});
 
 client.login(process.env.BOT_TOKEN);
